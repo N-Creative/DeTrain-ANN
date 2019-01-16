@@ -1,43 +1,41 @@
 <?php
 /*
- * © N-Creative, 2019. Доступно по лицензии MIT.
+ * © N-Creative, 2019. This code is available under the MIT license.
  */
 
-//TODO: Логические ошибки в работе нейронной сети, нужно найти их
-
 class Train {
-    protected $nInput; //кол-во входов
-    protected $nHidden; //кол-во ассоциативных нейронов
+    protected $nInput; //count of inputs
+    protected $nHidden; //count of hidden neurons
 
     protected $input = [];
     protected $hidden = [];
     protected $output;
 
-    protected $weightSA = []; //веса от входа к скрытому слою
-	protected $weightAR = []; //веса от скрытого слоя к выходу
+    protected $weightSA = []; //weights from input to hidden neurons
+    protected $weightAR = []; //weights from hidden neurons to output
 
     public function __construct(int $in, int $hdn) {
         $this->nInput = $in;
         $this->nHidden = $hdn;
 
-        //матрица весов: строки - нейроны текущего слоя, столбцы - нейроны следующего слоя
+	//the matrix of weights: rows is neurons of current layer and columns is neurons of next layer
         $this->weightAR[0] = rand(-5000, 5000) / 10000;
         for ($h = 1; $h <= $hdn; $h++) {
             for ($i = 0; $i <= $in; $i++)
-                $this->weightSA[$i][$h] = rand(-5000, 5000) / 10000; //инициализация весов SA
+                $this->weightSA[$i][$h] = rand(-5000, 5000) / 10000; //init SA weights
 
-            $this->weightAR[$h] = rand(-5000, 5000) / 10000; //инициализация весов AR
+            $this->weightAR[$h] = rand(-5000, 5000) / 10000; //init AR weights
         }
     }
 
-    //Запуск нейронной сети
+    //Run the neural network
     public function run(array $data, bool $train = false) {
         $nInput = &$this->nInput;
         $nHidden = &$this->nHidden;
 
         if (count($data) != $nInput) return false;
 
-        //распространение сигналов по SA-дендритам
+        //SA propagation
         $hidden = [];
         for ($h = 1; $h <= $nHidden; $h++) {
             $hidden[$h] = $this->weightSA[0][$h];
@@ -45,7 +43,7 @@ class Train {
                 $hidden[$h] += $data[$i - 1] * $this->weightSA[$i][$h];
         }
 
-        //распространение сигналов по AR-дендритам
+	//AR propagation
         $output = $this->sigmoid($this->weightAR[0]);
         for ($h = 1; $h <= $nHidden; $h++)
             $output += $this->sigmoid($hidden[$h]) * $this->weightAR[$h];
@@ -59,8 +57,7 @@ class Train {
         return $this->sigmoid($output);
     }
 
-    //DEBUG ME PLS!!!
-    //обучение методом обратного распространения ошибки
+    //Back propagation training
     public function train(float $t, float $output, float $a = null) {
         if ($a === null) $a = 1;
 
@@ -77,13 +74,13 @@ class Train {
         $dwSA = [];
         $da = [];
 
-        //распространение от выхода к скрытым слоям
-        $do = ($t - $output) / cosh($this->output);
+        //propagation from output layer to hidden layer
+        $do = ($t - $output) / cosh($this->output); //derivative of sigmoid.
         $dwAR[0] = $a * $do;
         for ($h = 1; $h <= $nHidden; $h++)
             $dwAR[$h] = $a * $do * $this->sigmoid($hidden[$h]);        
 
-        //распространение от скрытых слоёв ко входу
+        //propagation from hidden layer to input
         for ($h = 1; $h <= $nHidden; $h++) {
             $da[$h] = $do * $weightAR[$h] / cosh($hidden[$h]);
             $dwSA[0][$h] = $a * $da[$h];
@@ -91,7 +88,7 @@ class Train {
                 $dwSA[$i][$h] = $a * $da[$h] * $input[$i - 1];           
         }
 
-        //правим веса
+        //edit the weights
         for ($h = 1; $h <= $nHidden; $h++)
             for ($i = 0; $i <= $nInput; $i++)
                 $weightSA[$i][$h] += $dwSA[$i][$h];
@@ -100,7 +97,6 @@ class Train {
             $weightAR[$h] += $dwAR[$h];
     }
 
-    //Сигмоида
     protected function sigmoid(float $x) {
         return (2 / (1 + exp(-$x)) - 1);
     }
