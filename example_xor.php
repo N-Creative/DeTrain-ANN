@@ -2,7 +2,7 @@
 require_once "Train.php";
 
 //Create the neural network with 2 inputs and 3 hidden neurons
-$ann = new Train(2, 3);
+$ann = new Train(2, 3, 1);
 
 //This array is learning set
 $train = [
