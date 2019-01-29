@@ -3,6 +3,8 @@
  * © N-Creative, 2019. This code is available under the MIT license.
  */
 
+define("RAND", 500000000);
+
 class DeTrain {
     protected $nInput; //count of inputs
     protected $nHidden; //count of hidden neurons
@@ -23,11 +25,11 @@ class DeTrain {
 	//the matrix of weights: rows is neurons of current layer, columns is neurons of next layer
 	for ($i = 0; $i <= $in; $i++)
             for ($h = 1; $h <= $hdn; $h++)
-                $this->weightSA[$i][$h] = rand(-500000000, 500000000) / 1000000000; //init SA weights
+                $this->weightSA[$i][$h] = rand(-RAND, RAND) / (2 * RAND); //init SA weights
 
         for ($h = 0; $h <= $hdn; $h++)
             for ($o = 1; $o <= $out; $o++)
-                $this->weightAR[$h][$o] = rand(-500000000, 500000000) / 1000000000; //init AR weights
+                $this->weightAR[$h][$o] = rand(-RAND, RAND) / (2 * RAND); //init AR weights
     }
 
     //Run the neural network
