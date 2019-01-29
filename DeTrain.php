@@ -3,29 +3,31 @@
  * © N-Creative, 2019. This code is available under the MIT license.
  */
 
-class Train {
+class DeTrain {
     protected $nInput; //count of inputs
     protected $nHidden; //count of hidden neurons
+    protected $nOutput; //count of outputs
 
     protected $input = [];
     protected $hidden = [];
-    protected $output;
+    protected $output = [];
 
     protected $weightSA = []; //weights from input to hidden neurons
     protected $weightAR = []; //weights from hidden neurons to output
 
-    public function __construct(int $in, int $hdn) {
+    public function __construct(int $in, int $hdn, int $out) {
         $this->nInput = $in;
         $this->nHidden = $hdn;
+	$this->nOutput = $out;
 
-	//the matrix of weights: rows is neurons of current layer and columns is neurons of next layer
-        $this->weightAR[0] = rand(-5000, 5000) / 10000;
-        for ($h = 1; $h <= $hdn; $h++) {
-            for ($i = 0; $i <= $in; $i++)
-                $this->weightSA[$i][$h] = rand(-5000, 5000) / 10000; //init SA weights
+	//the matrix of weights: rows is neurons of current layer, columns is neurons of next layer
+	for ($i = 0; $i <= $in; $i++)
+            for ($h = 1; $h <= $hdn; $h++)
+                $this->weightSA[$i][$h] = rand(-500000000, 500000000) / 1000000000; //init SA weights
 
-            $this->weightAR[$h] = rand(-5000, 5000) / 10000; //init AR weights
-        }
+        for ($h = 0; $h <= $hdn; $h++)
+            for ($o = 1; $o <= $out; $o++)
+                $this->weightAR[$h][$o] = rand(-500000000, 500000000) / 1000000000; //init AR weights
     }
 
     //Run the neural network
@@ -35,7 +37,7 @@ class Train {
 
         if (count($data) != $nInput) return false;
 
-        //SA propagation
+        //SA forward propagation
         $hidden = [];
         for ($h = 1; $h <= $nHidden; $h++) {
             $hidden[$h] = $this->weightSA[0][$h];
@@ -43,10 +45,13 @@ class Train {
                 $hidden[$h] += $data[$i - 1] * $this->weightSA[$i][$h];
         }
 
-	//AR propagation
-        $output = $this->sigmoid($this->weightAR[0]);
-        for ($h = 1; $h <= $nHidden; $h++)
-            $output += $this->sigmoid($hidden[$h]) * $this->weightAR[$h];
+	//AR forward propagation
+        $output = [];
+        for ($o = 1; $o <= $nOutput; $o++) {
+            $output[$o] = $this->sigmoid($this->weightAR[0][$o]);
+            for ($h = 1; $h <= $nHidden; $h++)
+                $output[$o] += $this->sigmoid($hidden[$h]) * $this->weightAR[$h][$o];
+        }
 
         if ($train) {
             $this->input = $data;
@@ -75,17 +80,22 @@ class Train {
         $da = [];
 
         //propagation from output layer to hidden layer
-        $do = ($t - $output) / cosh($this->output); //derivative of sigmoid.
-        $dwAR[0] = $a * $do;
-        for ($h = 1; $h <= $nHidden; $h++)
-            $dwAR[$h] = $a * $do * $this->sigmoid($hidden[$h]);        
+        for ($o = 1; $o <= $nOutput; $o++) {
+            $dwAR[0][$o] = $a * ($t - $output[$o]) * cosh($this->output[$o]);
+            for ($h = 1; $h <= $nHidden; $h++)
+                $dwAR[$h][$o] = $dwAR[0][$o] * $this->sigmoid($hidden[$h]);  
+        }       
 
         //propagation from hidden layer to input
         for ($h = 1; $h <= $nHidden; $h++) {
-            $da[$h] = $do * $weightAR[$h] / cosh($hidden[$h]);
-            $dwSA[0][$h] = $a * $da[$h];
+            $dwSA[0][$h] = 0;
+            for ($o = 1; $o <= $nOutput; $o++)
+                $dwSA[0][$h] += $dwAR[0][$o] * $weightAR[$h][$o];
+
+            $dwSA[0][$h] *= cosh($hidden[$h]);
+
             for ($i = 1; $i <= $nInput; $i++)
-                $dwSA[$i][$h] = $a * $da[$h] * $input[$i - 1];           
+                $dwSA[$i][$h] = $dwSA[0][$h] * $input[$i - 1];           
         }
 
         //edit the weights
@@ -93,8 +103,9 @@ class Train {
             for ($i = 0; $i <= $nInput; $i++)
                 $weightSA[$i][$h] += $dwSA[$i][$h];
 
-        for ($h = 0; $h <= $nHidden; $h++)
-            $weightAR[$h] += $dwAR[$h];
+        for ($o = 1; $o <= $nOutput; $o++)
+            for ($h = 0; $h <= $nHidden; $h++) 
+                $weightAR[$h][$o] += $dwAR[$h];
     }
 
     protected function sigmoid(float $x) {
