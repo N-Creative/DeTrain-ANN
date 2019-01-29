@@ -3,6 +3,8 @@
  * © N-Creative, 2019. This code is available under the MIT license.
  */
 
+//Under this comment you can insert a namespace;
+
 define("RAND", 500000000);
 
 class DeTrain {
@@ -34,25 +36,29 @@ class DeTrain {
 
     //Run the neural network
     public function run(array $data, bool $train = false) {
-        $nInput = &$this->nInput;
-        $nHidden = &$this->nHidden;
+        $nInput = $this->nInput;
+        $nHidden = $this->nHidden;
 
         if (count($data) != $nInput) return false;
 
         //SA forward propagation
         $hidden = [];
         for ($h = 1; $h <= $nHidden; $h++) {
-            $hidden[$h] = $this->weightSA[0][$h];
+            $bufHid = $this->weightSA[0][$h];            
             for ($i = 1; $i <= $nInput; $i++)
-                $hidden[$h] += $data[$i - 1] * $this->weightSA[$i][$h];
+                $bufHid += $data[$i - 1] * $this->weightSA[$i][$h];
+            
+            $hidden[$h] = $bufHid;
         }
 
 	//AR forward propagation
         $output = [];
         for ($o = 1; $o <= $nOutput; $o++) {
-            $output[$o] = $this->sigmoid($this->weightAR[0][$o]);
+            $bufOut = $this->sigmoid($this->weightAR[0][$o]);           
             for ($h = 1; $h <= $nHidden; $h++)
-                $output[$o] += $this->sigmoid($hidden[$h]) * $this->weightAR[$h][$o];
+                $bufOut += $this->sigmoid($hidden[$h]) * $this->weightAR[$h][$o];
+            
+            $output[$o] = $bufOut;
         }
 
         if ($train) {
@@ -66,8 +72,8 @@ class DeTrain {
 
     //Back propagation training
     public function train(float $t, float $output, float $a = 1) {
-        $nInput = &$this->nInput;
-        $nHidden = &$this->nHidden;
+        $nInput = $this->nInput;
+        $nHidden = $this->nHidden;
 
         $input = &$this->input;
         $hidden = &$this->hidden;
@@ -81,21 +87,23 @@ class DeTrain {
 
         //propagation from output layer to hidden layer
         for ($o = 1; $o <= $nOutput; $o++) {
-            $dwAR[0][$o] = $a * ($t - $output[$o]) * cosh($this->output[$o]);
+            $bufAR = $a * ($t - $output[$o]) * cosh($output[$o]);
+            $dwAR[0][$o] = $bufAR;
             for ($h = 1; $h <= $nHidden; $h++)
-                $dwAR[$h][$o] = $dwAR[0][$o] * $this->sigmoid($hidden[$h]);  
+                $dwAR[$h][$o] = $bufAR * $this->sigmoid($hidden[$h]);  
         }       
 
         //propagation from hidden layer to input
         for ($h = 1; $h <= $nHidden; $h++) {
-            $dwSA[0][$h] = 0;
+            $bufSA = 0;           
             for ($o = 1; $o <= $nOutput; $o++)
-                $dwSA[0][$h] += $dwAR[0][$o] * $weightAR[$h][$o];
+                $bufSA += $dwAR[0][$o] * $weightAR[$h][$o];
 
-            $dwSA[0][$h] *= cosh($hidden[$h]);
-
+            $bufSA *= cosh($hidden[$h]);
+            
+            $dwSA[0][$h] = $bufSA;
             for ($i = 1; $i <= $nInput; $i++)
-                $dwSA[$i][$h] = $dwSA[0][$h] * $input[$i - 1];           
+                $dwSA[$i][$h] = $bufSA * $input[$i - 1];           
         }
 
         //edit the weights
