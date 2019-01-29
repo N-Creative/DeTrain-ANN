@@ -1,8 +1,8 @@
 <?php
-require_once "Train.php";
+require_once "DeTrain.php";
 
-//Create the neural network with 2 inputs and 3 hidden neurons
-$ann = new Train(2, 3, 1);
+//Create the neural network with 2 inputs, 3 hidden neurons and 1 output
+$ann = new DeTrain(2, 3, 1);
 
 //This array is learning set
 $train = [
@@ -15,7 +15,7 @@ $train = [
 echo "Training of test ANN...\n";
 
 $t = []; $output = [];
-for ($i = 0; $i < 200; $i++)
+for ($i = 0; $i < 100; $i++)
     foreach ($train as $row) {
         $t[1] = ($row[0] xor $row[1]);
         $output = $ann->run($row, true);
