@@ -65,9 +65,7 @@ class DeTrain {
     }
 
     //Back propagation training
-    public function train(float $t, float $output, float $a = null) {
-        if ($a === null) $a = 1;
-
+    public function train(float $t, float $output, float $a = 1) {
         $nInput = &$this->nInput;
         $nHidden = &$this->nHidden;
 
