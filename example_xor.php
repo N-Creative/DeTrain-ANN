@@ -14,16 +14,18 @@ $train = [
 
 echo "Training of test ANN...\n";
 
-for ($i = 0; $i < 2000; $i++)
+$t = []; $output = [];
+for ($i = 0; $i < 200; $i++)
     foreach ($train as $row) {
-        $t = ($row[0] xor $row[1]);
-        $output = $ann->run($row, true, 2);
-        $ann->train($t, $output);
+        $t[1] = ($row[0] xor $row[1]);
+        $output = $ann->run($row, true);
+        $ann->train($t, $output, 0.5);
     }
 
 echo "Testing ANN...\n";
 
 foreach ($train as $row) {
-    $output = round($ann->run($row), 3);
+    $output = $ann->run($row);
+    $result = round($output[1], 3);
     echo "$row[0] xor $row[1] = $output\n";
 }
