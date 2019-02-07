@@ -72,11 +72,14 @@ class DeTrain {
     }
 
     //Back propagation training
-    public function train(float $t, float $output, float $a = 1) {
+    public function train(array $input, array $t, float $a = 1) {
+	$output = $this->run($input, true);       
+        if ($output === false) return false;
+	    
         $nInput = $this->nInput;
         $nHidden = $this->nHidden;
+        $nOutput = $this->nOutput;
 
-        $input = &$this->input;
         $hidden = &$this->hidden;
 
         $weightSA = &$this->weightSA;
@@ -84,11 +87,10 @@ class DeTrain {
 
         $dwAR = [];
         $dwSA = [];
-        $da = [];
 
         //propagation from output layer to hidden layer
         for ($o = 1; $o <= $nOutput; $o++) {
-            $bufAR = $a * ($t - $output[$o]) * cosh($output[$o]);
+            $bufAR = $a * ($t[$o] - $output[$o]) * cosh($output[$o]);
             $dwAR[0][$o] = $bufAR;
             for ($h = 1; $h <= $nHidden; $h++)
                 $dwAR[$h][$o] = $bufAR * $this->sigmoid($hidden[$h]);  
@@ -100,7 +102,7 @@ class DeTrain {
             for ($o = 1; $o <= $nOutput; $o++)
                 $bufSA += $dwAR[0][$o] * $weightAR[$h][$o];
 
-            $bufSA *= cosh($hidden[$h]);
+            $bufSA *= $this->dSigmoid($hidden[$h]);
             
             $dwSA[0][$h] = $bufSA;
             for ($i = 1; $i <= $nInput; $i++)
@@ -119,5 +121,9 @@ class DeTrain {
 
     protected function sigmoid(float $x) {
         return (2 / (1 + exp(-$x)) - 1);
+    }
+	
+    protected function dSigmoid(float $x) {
+        return ((1 - $this->sigmoid($x) ** 2) / 2);
     }
 }
